@@ -4,7 +4,7 @@
     "module": "ESNext",
     "strict": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "types": ["node"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "drizzle.config.ts"]
 }
