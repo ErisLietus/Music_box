@@ -1,9 +1,10 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, serial, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core"
+
+export const mediaTypeEnum = pgEnum("media_type", ["audio", "video"])
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull(),
-  email: text("email").notNull().unique(),
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 })
@@ -15,10 +16,11 @@ export const playlists = pgTable("playlists", {
   createdAt: timestamp("created_at").defaultNow(),
 })
 
-export const songs = pgTable("songs", {
+export const media = pgTable("media", {
   id: serial("id").primaryKey(),
   playlistId: integer("playlist_id").references(() => playlists.id, {onDelete: "cascade"}),
   title: text("title").notNull(),
   fileUrl: text("file_url").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  type: mediaTypeEnum("type").notNull()
 })
