@@ -1,14 +1,13 @@
 import { Request, Response } from "express";
 import { BadRequestError, UnauthorizedError } from "./error";
-import { db, envOrThrow } from "../db/indexDB";
-import { NewUser, users } from "../db/schema";
-import * as argon2 from "argon2";
-import { eq } from "drizzle-orm";
+import {  envOrThrow } from "../db/indexDB";
+import { NewUser } from "../db/schema";
 import { respondWithJSON } from "./json";
 import { Router } from "express";
-import { JwtPayload } from "jsonwebtoken";
-import jwt from "jsonwebtoken";
 import { makeRefreshToken, createRefreshToken, refreshHandler, revokeHandler } from "./refresh";
+import { getUserByEmail, getUserByName, createUser, updateUserPass } from "../db/lookups";
+import { makeJWT } from "./jwt";
+import { hashPassword, hashEmail, checkPasswordHash } from "./hashing";
 
 export const authRouter = Router();
 authRouter.post("/register", (req, res, next) => {
@@ -23,47 +22,44 @@ authRouter.post("/refresh", (req, res, next) => {
 authRouter.post("/revoke", (req, res, next) => {
   Promise.resolve(revokeHandler(req, res)).catch(next)})
 
+authRouter.post("/password-reset", (req, res, next) => {
+  Promise.resolve(resetPasswordHandler(req, res)).catch(next)})
 
-export async function createUser(user: NewUser) {
-  const [result] = await db
-    .insert(users)
-    .values(user)
-    .onConflictDoNothing()
-    .returning();
-  return result;
-}
 
-export async function getUserByName(name: string) {
-  const result = await db.select().from(users).where(eq(users.username, name));
-  return result[0];
-}
-
-  type parameters = { password: string, username: string };
+  type parameters = { password: string, username: string, email: string };
 
   export async function handlerUsersCreate(req: Request, res: Response) {
     console.log("hit")
   const params: parameters = req.body
  
 
-  if (!params.username || !params.password) {
-    throw new BadRequestError("Email or password missing.")
+  if (!params.username || !params.password || !params.email) {
+    throw new BadRequestError("Username ,Email or password missing.")
   }
-   const fetch = await getUserByName(params.username)
-  if (fetch){
+   const hashedEmail = hashEmail(params.email)
+   const fetchName = await getUserByName(params.username)
+   const fetchEmail = await getUserByEmail(hashedEmail)
+  if (fetchName){
     return respondWithJSON(res, 400, "That Username has been taken")
   }
+  if (fetchEmail){
+    return respondWithJSON(res, 400, "That Email has been taken")
+  }
+
   const hashedPassword = await hashPassword(params.password);
+  
   const userParams: NewUser = {
     username: params.username,
     hashedPassword: hashedPassword,
+    hashedEmail: hashedEmail,
   };
   await createUser(userParams)
   return respondWithJSON(res, 201, "User has been created")
 }
- 
+  type loginParams = {username: string, password: string};
 
 export async function loginHandler(req: Request, res: Response){
-    const input: parameters = req.body
+    const input: loginParams = req.body
     
 
     if(!input.username|| !input.password){
@@ -91,54 +87,27 @@ export async function loginHandler(req: Request, res: Response){
         refreshToken: refreshToken,
         
       });
-     
-
     }
+    type resetParams = {email: string, newPassword: string};
 
-    export async function hashPassword(userPassword: string): Promise<string>{
-    return await argon2.hash(userPassword)
-    
-}
-
-export async function checkPasswordHash(password: string, hash: string): Promise<boolean>{
-    return await argon2.verify(hash, password)
-
-}
-
-type payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
-
-export function makeJWT(userID: number, expiresIn: number, secret: string): string{
-  const stringId = userID.toString()
-   const issuedAt = Math.floor(Date.now() / 1000)
-   const expiresAt = issuedAt + expiresIn
-
-   const payload: payload ={
-    iss: "music_box", 
-    sub: stringId, 
-    iat: issuedAt,
-    exp: expiresAt
-   } 
-   return jwt.sign(payload, secret)
-
-}
-
-export function validateJWT(tokenString: string, secret: string): string {
-    try {
-        const token = jwt.verify(tokenString, secret)
-
-        if (typeof token === "string") {
-            throw new UnauthorizedError("jwt Error")
+export async function resetPasswordHandler(req: Request, res: Response){
+        const input: resetParams = req.body
+        if(!input.email || !input.newPassword){
+          throw new BadRequestError("Email or new password missing")
         }
-
-        if (!token.sub || typeof token.sub !== "string") {
-            throw new UnauthorizedError("jwt Error")
+        const hash = hashEmail(input.email)
+        const user = await getUserByEmail(hash)
+        if(!user){
+          throw new BadRequestError("Not Found")
         }
-
-        return token.sub
-    } catch {
-        throw new UnauthorizedError("jwt Error")
-    }
+        const hashedPassword = await hashPassword(input.newPassword)
+        await updateUserPass(user.id, hashedPassword)
+        return respondWithJSON(res, 200, "Password has been updated")
 }
+
+
+
+
 
 
 

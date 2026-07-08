@@ -5,6 +5,7 @@ export const mediaTypeEnum = pgEnum("media_type", ["audio", "video"])
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  hashedEmail: varchar("hashed_email", {length: 512}).notNull().unique(),
   hashedPassword: varchar("hashed_password", {length: 512}).notNull().default("unset"),
   createdAt: timestamp("created_at").defaultNow(),
 })

@@ -3,7 +3,7 @@ import { db } from "../db/indexDB";
 import { eq, and,gt,isNull } from "drizzle-orm";
 import { Request, Response } from "express";
 import { UnauthorizedError } from "./error";
-import { makeJWT } from "./auth";
+import { makeJWT } from "./jwt";
 import { respondWithJSON } from "./json";
 import { envOrThrow } from "../db/indexDB";
 import { randomBytes } from "crypto";
