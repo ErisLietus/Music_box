@@ -1,1 +1,0 @@
-ALTER TABLE "playlists" ADD COLUMN "hasUser" boolean NOT NULL;

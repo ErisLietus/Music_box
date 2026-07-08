@@ -9,7 +9,7 @@ const pool = new Pool({
 
 export const db = drizzle({ client: pool} )
 
-function envOrThrow(key: string) {
+export function envOrThrow(key: string) {
   const value = process.env[key]
   if (!value) {
     throw new Error(`Missing environment variable: ${key}`)

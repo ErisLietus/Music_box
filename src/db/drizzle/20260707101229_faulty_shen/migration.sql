@@ -1,1 +1,0 @@
-ALTER TABLE "playlists" RENAME COLUMN "hasUser" TO "isPublic";

@@ -1,11 +1,14 @@
 import { Request, Response } from "express";
 import { BadRequestError, UnauthorizedError } from "./error";
-import { db } from "../db/indexDB";
+import { db, envOrThrow } from "../db/indexDB";
 import { NewUser, users } from "../db/schema";
 import * as argon2 from "argon2";
 import { eq } from "drizzle-orm";
 import { respondWithJSON } from "./json";
 import { Router } from "express";
+import { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+import { makeRefreshToken, createRefreshToken, refreshHandler, revokeHandler } from "./refresh";
 
 export const authRouter = Router();
 authRouter.post("/register", (req, res, next) => {
@@ -13,6 +16,12 @@ authRouter.post("/register", (req, res, next) => {
 
 authRouter.post("/login", (req, res, next) => {
   Promise.resolve(loginHandler(req, res)).catch(next)})
+
+authRouter.post("/refresh", (req, res, next) => {
+  Promise.resolve(refreshHandler(req, res)).catch(next)})
+
+authRouter.post("/revoke", (req, res, next) => {
+  Promise.resolve(revokeHandler(req, res)).catch(next)})
 
 
 export async function createUser(user: NewUser) {
@@ -48,7 +57,7 @@ export async function getUserByName(name: string) {
     username: params.username,
     hashedPassword: hashedPassword,
   };
-  const user = await createUser(userParams)
+  await createUser(userParams)
   return respondWithJSON(res, 201, "User has been created")
 }
  
@@ -70,7 +79,18 @@ export async function loginHandler(req: Request, res: Response){
     if(!await checkPasswordHash(input.password, user.hashedPassword)){
         throw new UnauthorizedError("incorrect email or password")
     }
-    return respondWithJSON(res,200, "Welcome back to the Music Box")
+    const jwtToken = makeJWT(user.id, 60*60, envOrThrow("JWT_SECRET"))
+     const refreshToken = makeRefreshToken()
+        await createRefreshToken(refreshToken, user.id)
+        console.log("Welcome back to the music box")
+    return respondWithJSON(res, 200, {
+        id: user.id,
+        user: user.username,
+        createdAt: user.createdAt,
+        token: jwtToken,
+        refreshToken: refreshToken,
+        
+      });
      
 
     }
@@ -84,3 +104,41 @@ export async function checkPasswordHash(password: string, hash: string): Promise
     return await argon2.verify(hash, password)
 
 }
+
+type payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
+
+export function makeJWT(userID: number, expiresIn: number, secret: string): string{
+  const stringId = userID.toString()
+   const issuedAt = Math.floor(Date.now() / 1000)
+   const expiresAt = issuedAt + expiresIn
+
+   const payload: payload ={
+    iss: "music_box", 
+    sub: stringId, 
+    iat: issuedAt,
+    exp: expiresAt
+   } 
+   return jwt.sign(payload, secret)
+
+}
+
+export function validateJWT(tokenString: string, secret: string): string {
+    try {
+        const token = jwt.verify(tokenString, secret)
+
+        if (typeof token === "string") {
+            throw new UnauthorizedError("jwt Error")
+        }
+
+        if (!token.sub || typeof token.sub !== "string") {
+            throw new UnauthorizedError("jwt Error")
+        }
+
+        return token.sub
+    } catch {
+        throw new UnauthorizedError("jwt Error")
+    }
+}
+
+
+

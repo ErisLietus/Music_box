@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, pgEnum, boolean, varchar } from "drizzle-orm/pg-core"
+import { pgTable, serial, text, integer, timestamp, pgEnum, boolean, varchar} from "drizzle-orm/pg-core"
 
 export const mediaTypeEnum = pgEnum("media_type", ["audio", "video"])
 
@@ -31,3 +31,19 @@ export const media = pgTable("media", {
 })
 
 export type newMedia = typeof media.$inferInsert;
+
+export const refreshTokens = pgTable("refresh_tokens", {
+  token: text("token").primaryKey(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+  userID:integer("user_id")
+  .notNull()
+  .references(() => users.id, {onDelete: "cascade"}),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+});
+
+export type NewRefreshToken = typeof refreshTokens.$inferInsert
