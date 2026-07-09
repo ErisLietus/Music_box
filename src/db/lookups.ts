@@ -1,5 +1,5 @@
 import { db } from "./indexDB";
-import { NewUser, users } from "./schema";
+import { newPlaylist, NewUser, playlists, users } from "./schema";
 import { eq } from "drizzle-orm";
 
 
@@ -28,4 +28,13 @@ export async function getUserByName(name: string) {
 export async function getUserByEmail(name: string) {
   const result = await db.select().from(users).where(eq(users.hashedEmail, name));
   return result[0];
+}
+
+export async function createPlaylist(playlist: newPlaylist) {
+  const [result] = await db
+    .insert(playlists)
+    .values(playlist)
+    .onConflictDoNothing()
+    .returning();
+  return result;
 }

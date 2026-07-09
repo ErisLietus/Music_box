@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { BadRequestError, UnauthorizedError } from "./error";
 import {  envOrThrow } from "../db/indexDB";
 import { NewUser } from "../db/schema";
@@ -6,8 +6,9 @@ import { respondWithJSON } from "./json";
 import { Router } from "express";
 import { makeRefreshToken, createRefreshToken, refreshHandler, revokeHandler } from "./refresh";
 import { getUserByEmail, getUserByName, createUser, updateUserPass } from "../db/lookups";
-import { makeJWT } from "./jwt";
+import { makeJWT, validateJWT } from "./jwt";
 import { hashPassword, hashEmail, checkPasswordHash } from "./hashing";
+
 
 export const authRouter = Router();
 authRouter.post("/register", (req, res, next) => {
@@ -98,13 +99,35 @@ export async function resetPasswordHandler(req: Request, res: Response){
         const hash = hashEmail(input.email)
         const user = await getUserByEmail(hash)
         if(!user){
-          throw new BadRequestError("Not Found")
+          return respondWithJSON(res,200, "Password has been updated")
         }
         const hashedPassword = await hashPassword(input.newPassword)
         await updateUserPass(user.id, hashedPassword)
         return respondWithJSON(res, 200, "Password has been updated")
 }
 
+export function getBearerToken(req: Request): string{
+    const auth = req.get("Authorization")
+    if(typeof auth !== "string"){
+        throw new UnauthorizedError("An Error occurred")
+    }
+    return auth.replace("Bearer ", "").trim()
+}
+
+
+
+export function requireAuth(req: Request, res: Response, next: NextFunction){
+  try{
+    const token = getBearerToken(req)
+    const user = validateJWT(token, envOrThrow("JWT_SECRET"))
+    req.userid = Number(user)
+    next()
+  }catch(error){
+      next(error)
+  }
+ 
+  
+}
 
 
 

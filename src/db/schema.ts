@@ -1,6 +1,6 @@
 import { pgTable, serial, text, integer, timestamp, pgEnum, boolean, varchar} from "drizzle-orm/pg-core"
 
-export const mediaTypeEnum = pgEnum("media_type", ["audio", "video"])
+export const mediaTypeEnum = pgEnum("media_type", ["audio", "video", "link"])
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -14,21 +14,23 @@ export type NewUser = typeof users.$inferInsert;
 
 export const playlists = pgTable("playlists", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id, {onDelete: "cascade"}),
+  userId: integer("user_id").notNull().references(() => users.id, {onDelete: "cascade"}),
   name: text("name").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-  isPublic: boolean().notNull(),
+  isPublic: boolean().notNull().default(false),
+  allowCollabEdits: boolean().notNull().default(false)
 })
 
 export type newPlaylist = typeof playlists.$inferInsert;
 
 export const media = pgTable("media", {
   id: serial("id").primaryKey(),
-  playlistId: integer("playlist_id").references(() => playlists.id, {onDelete: "cascade"}),
+  playlistId: integer("playlist_id").notNull().references(() => playlists.id, {onDelete: "cascade"}),
   title: text("title").notNull(),
   fileUrl: text("file_url").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-  type: mediaTypeEnum("type").notNull()
+  type: mediaTypeEnum("type").notNull(),
+  position: integer().notNull()
 })
 
 export type newMedia = typeof media.$inferInsert;
