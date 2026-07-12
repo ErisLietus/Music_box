@@ -59,6 +59,9 @@ authRouter.post("/password-reset", (req, res, next) => {
 }
   type loginParams = {username: string, password: string};
 
+
+  
+
 export async function loginHandler(req: Request, res: Response){
     const input: loginParams = req.body
     
@@ -121,12 +124,47 @@ export function requireAuth(req: Request, res: Response, next: NextFunction){
     const token = getBearerToken(req)
     const user = validateJWT(token, envOrThrow("JWT_SECRET"))
     req.userid = Number(user)
-    next()
+    return next()
   }catch(error){
+      return 
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       next(error)
   }
  
-  
 }
 
 
