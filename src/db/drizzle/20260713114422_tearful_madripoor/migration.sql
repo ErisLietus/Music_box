@@ -1,0 +1,2 @@
+ALTER TABLE "media" ADD COLUMN "added_by_user_id" integer NOT NULL;--> statement-breakpoint
+ALTER TABLE "media" ADD CONSTRAINT "media_added_by_user_id_users_id_fkey" FOREIGN KEY ("added_by_user_id") REFERENCES "users"("id") ON DELETE CASCADE;

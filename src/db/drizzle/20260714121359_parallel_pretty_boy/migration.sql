@@ -1,0 +1,1 @@
+ALTER TABLE "playlists" ADD CONSTRAINT "playlists_name_key" UNIQUE("name");

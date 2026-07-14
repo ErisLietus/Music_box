@@ -1,3 +1,4 @@
+import { unique } from "drizzle-orm/cockroach-core";
 import { pgTable, serial, text, integer, timestamp, pgEnum, boolean, varchar} from "drizzle-orm/pg-core"
 
 export const mediaTypeEnum = pgEnum("media_type", ["audio", "video", "link"])
@@ -19,7 +20,9 @@ export const playlists = pgTable("playlists", {
   createdAt: timestamp("created_at").defaultNow(),
   isPublic: boolean().notNull().default(false),
   allowCollabEdits: boolean().notNull().default(false)
-})
+}, (table) => [
+  unique().on(table.userId, table.name)
+])
 
 export type newPlaylist = typeof playlists.$inferInsert;
 
@@ -30,7 +33,8 @@ export const media = pgTable("media", {
   fileUrl: text("file_url").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   type: mediaTypeEnum("type").notNull(),
-  position: integer().notNull()
+  position: integer().notNull(),
+  addedByUserId: integer("added_by_user_id").notNull().references(() => users.id, {onDelete: "cascade"})
 })
 
 export type newMedia = typeof media.$inferInsert;

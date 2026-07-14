@@ -28,6 +28,11 @@ export class NotFoundError extends HTTPError {
     super(message, 404)
   }
 }
+export class ConflictError extends HTTPError {
+  constructor(message: string) {
+    super(message, 409);
+  }
+}
 
 export function errorHandler(err: Error, req: Request, res: Response, next: NextFunction){
     if(err instanceof HTTPError){

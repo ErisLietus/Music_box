@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { BadRequestError, UnauthorizedError } from "./error";
+import { BadRequestError, UnauthorizedError, ConflictError } from "./error";
 import {  envOrThrow } from "../db/indexDB";
 import { NewUser } from "../db/schema";
 import { respondWithJSON } from "./json";
@@ -40,12 +40,12 @@ authRouter.post("/password-reset", (req, res, next) => {
    const hashedEmail = hashEmail(params.email)
    const fetchName = await getUserByName(params.username)
    const fetchEmail = await getUserByEmail(hashedEmail)
-  if (fetchName){
-    return respondWithJSON(res, 400, "That Username has been taken")
-  }
-  if (fetchEmail){
-    return respondWithJSON(res, 400, "That Email has been taken")
-  }
+  if (fetchName) {
+  throw new ConflictError("That username has been taken");
+}
+if (fetchEmail) {
+  throw new ConflictError("That email has been taken");
+}
 
   const hashedPassword = await hashPassword(params.password);
   

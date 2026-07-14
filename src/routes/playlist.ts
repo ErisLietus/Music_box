@@ -1,10 +1,10 @@
 import { Request, Response, Router } from "express";
 
-import { BadRequestError } from "./error";
+import { BadRequestError, ConflictError } from "./error";
 import { newPlaylist } from "../db/schema";
 import { createPlaylist } from "../db/lookups";
 import { requireAuth } from "./auth";
-import { respondWithJSON } from "./json";
+import { respondWithError, respondWithJSON } from "./json";
 
 export const playlistRouter = Router()
 
@@ -22,6 +22,9 @@ async function  createPlaylistHandler(req: Request, res: Response){
         name: name,
         userId: user,
       };
-    await createPlaylist(playlist)
+    const playlistReturn = await createPlaylist(playlist)
+    if (!playlistReturn){
+            throw new ConflictError("This playlist name has already been used. Please choose another")
+    }
     return respondWithJSON(res, 200, "Playlist has been made")
 }
