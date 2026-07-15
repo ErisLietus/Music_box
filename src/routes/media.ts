@@ -48,7 +48,7 @@ export async function importMediaLinkHandler(req: Request, res: Response){
     return respondWithJSON(res, 200, "Media has been uploaded")
 }
 
-export async function importMediaUploadHandler(req: Request, res: Response){
+/*export async function importMediaUploadHandler(req: Request, res: Response){
     const user = req.userid
     if(!user){
         throw new BadRequestError("No user")
@@ -80,7 +80,4 @@ export async function importMediaUploadHandler(req: Request, res: Response){
     createMedia(media)
     return respondWithJSON(res, 200, "Media has been uploaded")
 }
-
-function checkType(mediaString: string){
-    
-}
+*/
