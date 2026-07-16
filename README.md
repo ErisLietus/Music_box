@@ -6,7 +6,7 @@ A music player on the web that you can insert your own music to play from the we
 A backend API for creating and managing music playlists, built with Express, 
 TypeScript, PostgreSQL, and Drizzle ORM.
 
-## Purpose
+## Motivation
 
 This project demonstrates a full backend implementation including:
 - JWT-based authentication and middleware-protected routes
@@ -24,7 +24,7 @@ This project demonstrates a full backend implementation including:
 - Drizzle ORM
 - JWT (jsonwebtoken)
 
-## Setup
+## Setup Quick Start
 
 \`\`\`bash
 git clone https://github.com/ErisLietus/Music_box
@@ -52,6 +52,8 @@ npm run dev
 - `POST /api/media/link` — add a link-based media item to a playlist (requires auth)
 
 ## Example Requests (curl)
+
+## Usage
 
 ## login
 \`\`\`
@@ -113,6 +115,8 @@ Expected response:
 \`\`\`json
 {"error": "That username has been taken"}
 \`\`\`
+
+## Contributing
 
 
 
